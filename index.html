@@ -106,7 +106,7 @@
 
     <main x-show="!carregando" class="container mx-auto px-4 max-w-4xl mt-6" style="display: none;">
         
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 space-y-4">
+        <!-- <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 space-y-4">
             
             <div>
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Para quem?</p>
@@ -133,6 +133,36 @@
                     </template>
                 </div>
             </div>
+        </div> -->
+
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+    
+            <div>
+                <label for="filtro-publico" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Para quem?
+                </label>
+                <select id="filtro-publico" 
+                        x-model="filtroPublico" 
+                        class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent cursor-pointer transition-all">
+                    <template x-for="pub in opcoesPublico" :key="pub">
+                        <option :value="pub" x-text="pub"></option>
+                    </template>
+                </select>
+            </div>
+
+            <div>
+                <label for="filtro-categoria" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                    Qual tipo de joia?
+                </label>
+                <select id="filtro-categoria" 
+                        x-model="filtroCategoria" 
+                        class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent cursor-pointer transition-all">
+                    <template x-for="cat in opcoesCategoria" :key="cat">
+                        <option :value="cat" x-text="cat"></option>
+                    </template>
+                </select>
+            </div>
+
         </div>
 
         <div x-show="produtosFiltrados.length === 0" class="text-center py-20">
