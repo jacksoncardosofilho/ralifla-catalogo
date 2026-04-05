@@ -21,9 +21,10 @@
                 produtos: [],
                 carregando: true,
                 
-                // Filtros ativos
+                // Filtros ativos e Barra de Pesquisa
                 filtroPublico: 'Todos',
                 filtroCategoria: 'Todas',
+                termoBusca: '', // <-- Adicionamos a variável da barra de pesquisa aqui
                 
                 // Opções de botões
                 opcoesPublico: ['Todos', 'Feminino', 'Masculino', 'Infantil'],
@@ -40,7 +41,6 @@
 
                 async init() {
                     try {
-                        // Chama a sua função perfeitamente criada!
                         const { data, error } = await supabaseClient.rpc('listar_catalogo_online');
                         if (error) throw error;
                         
@@ -52,17 +52,30 @@
                     }
                 },
 
-                // Lógica mágica que filtra os produtos na tela em tempo real
+                // Lógica que filtra os produtos na tela em tempo real
                 get produtosFiltrados() {
                     return this.produtos.filter(p => {
-                        // Trata nulos caso a peça ainda não tenha categoria cadastrada
+                        // 1. Filtros de Categoria e Público
                         const pub = p.publico ? p.publico.toLowerCase() : '';
                         const cat = p.categoria ? p.categoria.toLowerCase() : '';
                         
                         const matchPublico = this.filtroPublico === 'Todos' || pub === this.filtroPublico.toLowerCase();
                         const matchCategoria = this.filtroCategoria === 'Todas' || cat === this.filtroCategoria.toLowerCase();
                         
-                        return matchPublico && matchCategoria;
+                        // 2. Filtro da Barra de Pesquisa
+                        const termo = this.termoBusca.toLowerCase().trim();
+                        let matchBusca = true;
+                        
+                        if (termo !== '') {
+                            // Verifica se o termo está no nome ou no código interno (evitando erros de valores nulos)
+                            const nomeJoia = (p.nome || '').toLowerCase();
+                            const codigoJoia = (p.codigo_interno || '').toLowerCase();
+                            
+                            matchBusca = nomeJoia.includes(termo) || codigoJoia.includes(termo);
+                        }
+                        
+                        // A joia só aparece se passar em todas as condições
+                        return matchPublico && matchCategoria && matchBusca;
                     });
                 },
 
@@ -70,13 +83,11 @@
                     return new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'}).format(v||0); 
                 },
 
-                // Remove os zeros à esquerda do código
                 removerZeros(codigo) {
                     if (!codigo) return '';
                     return codigo.toString().replace(/^0+/, '');
                 },
                 
-                // Gera uma imagem genérica bonita baseada no nome da peça (já que ainda não temos upload de fotos)
                 gerarImagemPlaceholder(nome) {
                     const iniciais = nome.substring(0, 2).toUpperCase();
                     return `https://ui-avatars.com/api/?name=${iniciais}&background=f3e8ff&color=7e22ce&size=400&font-size=0.3`;
@@ -105,38 +116,26 @@
     </div>
 
     <main x-show="!carregando" class="container mx-auto px-4 max-w-4xl mt-6" style="display: none;">
-        
-        <!-- <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 space-y-4">
-            
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Para quem?</p>
-                <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <template x-for="pub in opcoesPublico" :key="pub">
-                        <button @click="filtroPublico = pub" 
-                                :class="filtroPublico === pub ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                                class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200">
-                            <span x-text="pub"></span>
-                        </button>
-                    </template>
-                </div>
-            </div>
 
-            <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Qual tipo de joia?</p>
-                <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <template x-for="cat in opcoesCategoria" :key="cat">
-                        <button @click="filtroCategoria = cat" 
-                                :class="filtroCategoria === cat ? 'bg-purple-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                                class="px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-all duration-200">
-                            <span x-text="cat"></span>
-                        </button>
-                    </template>
+        <div class="mb-4">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </div>
+                <input type="text" 
+                    x-model="termoBusca" 
+                    placeholder="Buscar joia por nome ou código..." 
+                    class="w-full bg-white border border-gray-200 text-gray-700 py-3 pl-12 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent transition-all shadow-sm">
+                
+                <button x-show="termoBusca !== ''" @click="termoBusca = ''" class="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-purple-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
-        </div> -->
+        </div>
 
         <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-    
             <div>
                 <label for="filtro-publico" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                     Para quem?
@@ -162,14 +161,13 @@
                     </template>
                 </select>
             </div>
-
         </div>
 
         <div x-show="produtosFiltrados.length === 0" class="text-center py-20">
             <div class="text-6xl mb-4">🥺</div>
             <h3 class="text-xl font-bold text-gray-700">Poxa, não achamos nada!</h3>
             <p class="text-gray-500 mt-2 text-sm">Nenhuma peça encontrada com esses filtros.</p>
-            <button @click="filtroPublico = 'Todos'; filtroCategoria = 'Todas'" class="mt-4 text-purple-600 font-bold hover:underline">Limpar Filtros</button>
+            <button @click="filtroPublico = 'Todos'; filtroCategoria = 'Todas'; termoBusca = ''" class="mt-4 text-purple-600 font-bold hover:underline">Limpar Filtros e Busca</button>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -190,10 +188,6 @@
                             <svg class="text-white opacity-0 group-hover:opacity-100 drop-shadow-md transition-opacity duration-300" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
                         </div>
                     </div>
-
-                    <!-- <div class="aspect-square bg-gray-50 relative overflow-hidden">
-                        <img :src="gerarImagemPlaceholder(produto.nome)" alt="Foto da Joia" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                    </div> -->
 
                     <div class="p-4 flex flex-col flex-1">
                         <div class="flex gap-1 mb-2 flex-wrap">
